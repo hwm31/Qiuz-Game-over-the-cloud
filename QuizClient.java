@@ -9,9 +9,33 @@ public class QuizClient {
         BufferedWriter out = null;        // Sends messages to the server
         Socket socket = null;
 
+        String serverIP = "localhost";   // Default server IP
+        int serverPort = 1234;           // Default server port
+
+        // Load server connection details from configuration file
+        File configFile = new File("server_info.dat");
+        if (configFile.exists()) {
+            try (BufferedReader configReader = new BufferedReader(new FileReader(configFile))) {
+                String line;
+                while ((line = configReader.readLine()) != null) {
+                    if (line.startsWith("IP=")) {
+                        serverIP = line.substring(3).trim(); // Extract IP
+                    } else if (line.startsWith("PORT=")) {
+                        serverPort = Integer.parseInt(line.substring(5).trim()); // Extract Port
+                    }
+                }
+            } catch (IOException | NumberFormatException e) {
+                System.out.println("Error reading configuration file. Using default settings.");
+            }
+        } else {
+            System.out.println("Configuration file not found. Using default settings.");
+        }
+
+        System.out.println("Connecting to server at " + serverIP + ":" + serverPort);
+
         try {
-            // Connect to the server running on localhost at port 8888
-            socket = new Socket("localhost", 8888);
+            // Connect to the server using the loaded or default IP and port
+            socket = new Socket(serverIP, serverPort);
             System.out.println("Connected to the server.");
 
             // Initialize input and output streams
@@ -42,13 +66,6 @@ public class QuizClient {
 
                 // If the user types "bye", break the loop
                 if (userMessage.trim().equalsIgnoreCase("bye")) {
-                    // Wait for the final score from the server before exiting
-                    while ((serverMessage = in.readLine()) != null) {
-                        System.out.println("Server> " + serverMessage);
-                        if (serverMessage.contains("Your final score is:")) {
-                            break; // Exit after displaying the final score
-                        }
-                    }
                     break;
                 }
 
@@ -60,22 +77,6 @@ public class QuizClient {
                     if (serverMessage.startsWith("Question") || serverMessage.contains("Quiz Over")) {
                         break;
                     }
-
-                    // If final score is sent, break and display it
-                    if (serverMessage.contains("Your final score is:")) {
-                        break;
-                    }
-                }
-
-                // If the quiz is over, display the final score and disconnect
-                if (serverMessage != null && serverMessage.contains("Quiz Over")) {
-                    while ((serverMessage = in.readLine()) != null) {
-                        System.out.println("Server> " + serverMessage);
-                        if (serverMessage.contains("Your final score is:")) {
-                            break;
-                        }
-                    }
-                    break;
                 }
             }
         } catch (IOException e) {
