@@ -30,7 +30,9 @@ public class QuizServer {
 
         @Override
         public void run() {
-            System.out.println("Connected: " + socket);
+            String clientAddress = socket.getRemoteSocketAddress().toString(); // Get client's IP:Port
+            System.out.println("Connected: " + clientAddress);
+
             int clientScore = 0;
 
             try (
@@ -66,7 +68,7 @@ public class QuizServer {
                     if (clientMessage == null || clientMessage.trim().equalsIgnoreCase("bye")) {
                         out.println("Goodbye! You exited the quiz early.");
                         out.println("Your final score is: " + clientScore + "/50");
-                        System.out.println("Client exited quiz early with score: " + clientScore);
+                        System.out.println("Client (" + clientAddress + ") exited quiz early with score: " + clientScore);
                         return;
                     }
 
@@ -86,22 +88,14 @@ public class QuizServer {
 
                 // At the end of the quiz
                 out.println("Quiz Over! Your final score is: " + clientScore + "/50");
-                System.out.println("Client completed the quiz with score: " + clientScore);
-
-                // When the client exits early
-                if (clientMessage == null || clientMessage.trim().equalsIgnoreCase("bye")) {
-                    out.println("Goodbye! You exited the quiz early.");
-                    out.println("Your final score is: " + clientScore + "/50"); // Send the score
-                    System.out.println("Client exited quiz early with score: " + clientScore);
-                    return;
-                }
+                System.out.println("Client (" + clientAddress + ") completed the quiz with score: " + clientScore);
 
             } catch (IOException e) {
                 System.out.println("Error handling client communication: " + e.getMessage());
             } finally {
                 try {
                     socket.close();
-                    System.out.println("Closed: " + socket);
+                    System.out.println("Closed: " + clientAddress);
                 } catch (IOException e) {
                     System.out.println("Error closing socket: " + e.getMessage());
                 }
