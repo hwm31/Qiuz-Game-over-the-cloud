@@ -21,7 +21,7 @@ class QuizClientChatUI extends JFrame {
     public QuizClientChatUI() {
         // Set up the GUI
         setTitle("Quiz Chat");
-        setSize(900, 500);
+        setSize(700, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -152,7 +152,17 @@ class QuizClientChatUI extends JFrame {
 
             JLabel messageLabel = new JLabel(message);
             messageLabel.setOpaque(true);
-            messageLabel.setBackground(isClient ? Color.CYAN : Color.LIGHT_GRAY);
+
+            // Check if the message contains "Correct!" or "Incorrect!"
+            if (message.contains("Correct!")) {
+                messageLabel.setForeground(Color.GREEN); // Green text for "Correct!"
+            } else if (message.contains("Incorrect!")) {
+                messageLabel.setForeground(Color.RED); // Red text for "Incorrect!"
+            } else {
+                messageLabel.setBackground(isClient ? Color.CYAN : Color.LIGHT_GRAY);
+                messageLabel.setForeground(Color.BLACK); // Default black text
+            }
+
             messageLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
             messagePanel.add(messageLabel);
 
