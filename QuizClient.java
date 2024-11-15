@@ -21,7 +21,7 @@ class QuizClientChatUI extends JFrame {
     public QuizClientChatUI() {
         // Set up the GUI
         setTitle("Quiz Client - Chat Style");
-        setSize(600, 500);
+        setSize(900, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -121,17 +121,13 @@ class QuizClientChatUI extends JFrame {
         try {
             String serverMessage;
             while ((serverMessage = in.readLine()) != null) {
-                // Handle server messages
                 if (serverMessage.contains("Your final score is:")) {
                     addSystemMessage(serverMessage); // Display the final score as a system message
-                    textField.setEnabled(false);
+                    textField.setEnabled(false); // Disable input after score is shown
                     sendButton.setEnabled(false);
-                    break;
+                    break; // Stop receiving further messages after the final score
                 } else if (serverMessage.contains("Quiz Over") || serverMessage.contains("Goodbye")) {
                     addSystemMessage(serverMessage); // Quiz completion message
-                    textField.setEnabled(false);
-                    sendButton.setEnabled(false);
-                    break;
                 } else {
                     addChatMessage("Server: " + serverMessage, false); // Regular server messages
                 }
@@ -172,21 +168,21 @@ class QuizClientChatUI extends JFrame {
     private void addSystemMessage(String message) {
         SwingUtilities.invokeLater(() -> {
             JPanel messagePanel = new JPanel();
-            messagePanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+            messagePanel.setLayout(new FlowLayout(FlowLayout.CENTER)); // Center align system messages
 
             JLabel messageLabel = new JLabel(message);
             messageLabel.setOpaque(true);
-            messageLabel.setBackground(Color.WHITE);
-            messageLabel.setForeground(Color.BLACK);
-            messageLabel.setFont(messageLabel.getFont().deriveFont(Font.BOLD)); // Bold text for system messages
-            messageLabel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+            messageLabel.setBackground(Color.WHITE); // White background
+            messageLabel.setForeground(Color.BLACK); // Black text
+            messageLabel.setFont(messageLabel.getFont().deriveFont(Font.BOLD)); // Bold text
+            messageLabel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); // Padding
             messagePanel.add(messageLabel);
 
             chatPanel.add(messagePanel);
             chatPanel.revalidate();
             chatPanel.repaint();
 
-            // Scroll to the bottom automatically
+            // Automatically scroll to the bottom
             chatPanel.scrollRectToVisible(new Rectangle(0, chatPanel.getHeight(), 1, 1));
         });
     }

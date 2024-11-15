@@ -84,9 +84,17 @@ public class QuizServer {
                     questionNumber++;
                 }
 
-                // Send final score and close connection
+                // At the end of the quiz
                 out.println("Quiz Over! Your final score is: " + clientScore + "/50");
                 System.out.println("Client completed the quiz with score: " + clientScore);
+
+                // When the client exits early
+                if (clientMessage == null || clientMessage.trim().equalsIgnoreCase("bye")) {
+                    out.println("Goodbye! You exited the quiz early.");
+                    out.println("Your final score is: " + clientScore + "/50"); // Send the score
+                    System.out.println("Client exited quiz early with score: " + clientScore);
+                    return;
+                }
 
             } catch (IOException e) {
                 System.out.println("Error handling client communication: " + e.getMessage());
