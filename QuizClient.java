@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.util.Scanner;
 
 public class QuizClient {
 
@@ -13,32 +12,52 @@ public class QuizClient {
         try {
             // Connect to the server running on localhost at port 8888
             socket = new Socket("localhost", 8888);
-            System.out.println("Connected to the server. Type your message or answer:");
+            System.out.println("Connected to the server.");
 
             // Initialize input and output streams
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             userIn = new BufferedReader(new InputStreamReader(System.in));
             out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
-            String userMessage;
-            while (true) {
-                // Read user input from console
-                userMessage = userIn.readLine();
+            // Display initial messages from the server
+            String serverMessage;
+            while ((serverMessage = in.readLine()) != null) {
+                System.out.println("Server: " + serverMessage);
 
-                // If the user types "bye", send it to the server and break the loop
-                if (userMessage.equalsIgnoreCase("bye")) {
-                    out.write(userMessage + "\n");
-                    out.flush();
+                // Stop reading initial messages if they include the quiz instructions
+                if (serverMessage.contains("Type 'start' to begin the quiz or 'bye' to exit.")) {
                     break;
                 }
+            }
 
-                // Send the user message to the server
-                out.write("Client> " + userMessage + "\n");
-                out.flush();
+            String userMessage;
+            while (true) {
+                // Wait for server's question or feedback
+                while ((serverMessage = in.readLine()) != null) {
+                    System.out.println("Server: " + serverMessage);
 
-                // Receive and print the server's response
-                String serverMessage = in.readLine();
-                System.out.println("Server: " + serverMessage);
+                    // If the server sends "Quiz Over" or "Goodbye," break the loop
+                    if (serverMessage.contains("Quiz Over") || serverMessage.contains("Goodbye")) {
+                        return;
+                    }
+
+                    // Prompt user for input after receiving a question
+                    if (serverMessage.startsWith("Question:")) {
+                        System.out.print("You: ");
+                        userMessage = userIn.readLine();
+
+                        // If the user types "bye", send it to the server and exit
+                        if (userMessage.equalsIgnoreCase("bye")) {
+                            out.write(userMessage + "\n");
+                            out.flush();
+                            return;
+                        }
+
+                        // Send the user message to the server
+                        out.write(userMessage + "\n");
+                        out.flush();
+                    }
+                }
             }
         } catch (IOException e) {
             System.out.println("Error: " + e.getMessage());
