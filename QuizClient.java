@@ -97,7 +97,7 @@ class QuizClientChatUI extends JFrame {
             return; // Ignore empty messages
         }
 
-        addChatMessage("You: " + message, true); // Show the user's input on the right
+        addChatMessage(message, true); // Show the user's input on the right
 
         try {
             out.write(message + "\n");
@@ -129,7 +129,7 @@ class QuizClientChatUI extends JFrame {
                 } else if (serverMessage.contains("Quiz Over") || serverMessage.contains("Goodbye")) {
                     addSystemMessage(serverMessage); // Quiz completion message
                 } else {
-                    addChatMessage("Server: " + serverMessage, false); // Regular server messages
+                    addChatMessage(serverMessage, false); // Regular server messages
                 }
             }
         } catch (IOException e) {
