@@ -41,6 +41,7 @@ public class QuizServer {
 
                 // Wait for the client to type 'start' or 'bye'
                 String clientMessage = in.readLine();
+                System.out.println("Received from client: " + clientMessage); // Debugging log
                 if (clientMessage == null || clientMessage.equalsIgnoreCase("bye")) {
                     out.println("Goodbye! Thank you for visiting the quiz.");
                     return; // End connection if client types 'bye' or disconnects
@@ -50,32 +51,38 @@ public class QuizServer {
                 }
 
                 // Start the quiz
-                out.println("The quiz is starting! Answer the following questions:");
+                out.println("The quiz is starting! Answer the following questions!");
 
-                // Quiz loop
+                // Quiz loop with question counter
+                int questionNumber = 1; // Track question number
                 for (Question question : questions) {
                     // Send question
-                    out.println("Question: " + question.getQuestionText());
+                    out.println("Question " + questionNumber + ": " + question.getQuestionText());
+                    System.out.println("Sent Question " + questionNumber + ": " + question.getQuestionText());
 
                     // Wait for client's answer
                     clientMessage = in.readLine();
+                    System.out.println("Client's answer for Question " + questionNumber + ": " + clientMessage); // Debugging log
                     if (clientMessage == null || clientMessage.equalsIgnoreCase("bye")) {
                         out.println("Goodbye! You exited the quiz early.");
-                        out.println("Your final score is: " + clientScore);
+                        out.println("Your final score is: " + clientScore + "/50");
                         return; // End connection if client types 'bye' or disconnects
                     }
 
                     // Provide feedback immediately based on case-insensitive comparison
                     if (clientMessage.equalsIgnoreCase(question.getAnswer())) {
-                        clientScore++;
+                        clientScore = clientScore + 10;
                         out.println("Correct!");
                     } else {
                         out.println("Incorrect!");
                     }
+
+                    // Increment question number
+                    questionNumber++;
                 }
 
                 // Send final score
-                out.println("Quiz Over! Your final score is: " + clientScore);
+                out.println("Quiz Over! Your final score is: " + clientScore + "/50");
 
             } catch (IOException e) {
                 System.out.println("Error: " + socket);

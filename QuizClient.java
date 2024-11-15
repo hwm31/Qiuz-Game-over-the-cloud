@@ -32,32 +32,26 @@ public class QuizClient {
 
             String userMessage;
             while (true) {
-                // Wait for server's question or feedback
-                while ((serverMessage = in.readLine()) != null) {
-                    System.out.println("Server: " + serverMessage);
+                // Prompt user for input
+                System.out.print("You: ");
+                userMessage = userIn.readLine();
 
-                    // If the server sends "Quiz Over" or "Goodbye," break the loop
-                    if (serverMessage.contains("Quiz Over") || serverMessage.contains("Goodbye")) {
-                        return;
-                    }
+                // Send the user message to the server
+                out.write(userMessage + "\n");
+                out.flush(); // Ensure message is sent immediately
 
-                    // Prompt user for input after receiving a question
-                    if (serverMessage.startsWith("Question:")) {
-                        System.out.print("You: ");
-                        userMessage = userIn.readLine();
-
-                        // If the user types "bye", send it to the server and exit
-                        if (userMessage.equalsIgnoreCase("bye")) {
-                            out.write(userMessage + "\n");
-                            out.flush();
-                            return;
-                        }
-
-                        // Send the user message to the server
-                        out.write(userMessage + "\n");
-                        out.flush();
-                    }
+                // If the user types "bye", break the loop
+                if (userMessage.equalsIgnoreCase("bye")) {
+                    break;
                 }
+
+                // Receive and print the server's response
+                serverMessage = in.readLine();
+                if (serverMessage == null) {
+                    System.out.println("Server connection closed.");
+                    break;
+                }
+                System.out.println("Server: " + serverMessage);
             }
         } catch (IOException e) {
             System.out.println("Error: " + e.getMessage());
