@@ -20,7 +20,7 @@ class QuizClientChatUI extends JFrame {
 
     public QuizClientChatUI() {
         // Set up the GUI
-        setTitle("Quiz Client - Chat Style");
+        setTitle("Quiz Chat");
         setSize(900, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
