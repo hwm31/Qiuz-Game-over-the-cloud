@@ -19,7 +19,6 @@ public class QuizServer {
         private static final List<Question> questions = Arrays.asList(
                 new Question("What is the capital of France?", "Paris"),
                 new Question("What is 2 + 2?", "4"),
-                new Question("What is the largest ocean?", "Pacific"),
                 new Question("What is the largest ocean?", "Pacific")
         );
 
@@ -33,36 +32,53 @@ public class QuizServer {
             int clientScore = 0;
 
             try (
-                    var in = new Scanner(socket.getInputStream());
+                    var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     var out = new PrintWriter(socket.getOutputStream(), true)
             ) {
+                // Send welcome message and instructions to the client
                 out.println("Welcome to the Quiz Game!");
+                out.println("Type 'start' to begin the quiz or 'bye' to exit.");
 
-                // Send quiz questions and receive client's answers
+                // Wait for the client to respond with 'start' or 'bye'
+                String clientMessage = in.readLine();
+
+                if (clientMessage == null || clientMessage.equalsIgnoreCase("bye")) {
+                    out.println("Goodbye! Thank you for visiting the quiz.");
+                    return; // End connection if client types 'bye' or disconnects
+                } else if (!clientMessage.equalsIgnoreCase("start")) {
+                    out.println("Invalid command. Please type 'start' to begin or 'bye' to exit.");
+                    return;
+                }
+
+                // Start the quiz
+                out.println("The quiz is starting! Answer the following questions:");
+
+                // Quiz question-answer interaction
                 for (Question question : questions) {
+                    // Send question to the client
                     out.println("Question: " + question.getQuestionText());
 
-                    // Wait for client's answer
-                    if (in.hasNextLine()) {
-                        String clientAnswer = in.nextLine();
+                    // Wait for the client's answer
+                    clientMessage = in.readLine();
+                    if (clientMessage == null || clientMessage.equalsIgnoreCase("bye")) {
+                        out.println("Goodbye! You exited the quiz early.");
+                        out.println("Your final score is: " + clientScore);
+                        return; // End connection if client types 'bye' or disconnects
+                    }
 
-                        // Check if the answer is correct and send feedback
-                        if (clientAnswer.equalsIgnoreCase(question.getAnswer())) {
-                            clientScore = clientScore + 10;
-                            out.println("Correct!");
-                        } else {
-                            out.println("Incorrect!");
-                        }
+                    // Check if the answer is correct and provide feedback
+                    if (clientMessage.equalsIgnoreCase(question.getAnswer())) {
+                        clientScore++;
+                        out.println("Correct!");
                     } else {
-                        out.println("No answer received. Disconnecting.");
-                        break;
+                        out.println("Incorrect!");
                     }
                 }
 
-                // Send final score
+                // Send the final score
                 out.println("Quiz Over! Your final score is: " + clientScore);
 
-            } catch (Exception e) {
+            } catch (IOException e) {
                 System.out.println("Error: " + socket);
             } finally {
                 try {
