@@ -1,4 +1,4 @@
-# Qiuz-Game-over-the-cloud
+# Quiz-Game-over-the-cloud
 
 Gachon university Computer Network & Programming
 
