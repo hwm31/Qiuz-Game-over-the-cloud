@@ -41,11 +41,10 @@ public class QuizServer {
 
                 // Wait for the client to type 'start' or 'bye'
                 String clientMessage = in.readLine();
-                System.out.println("Received from client: " + clientMessage); // Debugging log
-                if (clientMessage == null || clientMessage.equalsIgnoreCase("bye")) {
+                if (clientMessage == null || clientMessage.trim().equalsIgnoreCase("bye")) {
                     out.println("Goodbye! Thank you for visiting the quiz.");
                     return; // End connection if client types 'bye' or disconnects
-                } else if (!clientMessage.equalsIgnoreCase("start")) {
+                } else if (!clientMessage.trim().equalsIgnoreCase("start")) {
                     out.println("Invalid command. Please type 'start' to begin or 'bye' to exit.");
                     return;
                 }
@@ -62,16 +61,18 @@ public class QuizServer {
 
                     // Wait for client's answer
                     clientMessage = in.readLine();
-                    System.out.println("Client's answer for Question " + questionNumber + ": " + clientMessage); // Debugging log
-                    if (clientMessage == null || clientMessage.equalsIgnoreCase("bye")) {
+                    if (clientMessage == null || clientMessage.trim().equalsIgnoreCase("bye")) {
                         out.println("Goodbye! You exited the quiz early.");
                         out.println("Your final score is: " + clientScore + "/50");
+                        System.out.println("Client exited quiz early with score: " + clientScore);
                         return; // End connection if client types 'bye' or disconnects
                     }
 
+                    System.out.println("Received answer for Question " + questionNumber + ": " + clientMessage); // Debugging log
+
                     // Provide feedback immediately based on case-insensitive comparison
-                    if (clientMessage.equalsIgnoreCase(question.getAnswer())) {
-                        clientScore = clientScore + 10;
+                    if (clientMessage.trim().equalsIgnoreCase(question.getAnswer())) {
+                        clientScore += 10;
                         out.println("Correct!");
                     } else {
                         out.println("Incorrect!");
