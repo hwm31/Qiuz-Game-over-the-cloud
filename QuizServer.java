@@ -62,38 +62,29 @@ public class QuizServer {
                     System.out.println("Sent Question " + questionNumber + ": " + question.getQuestionText());
 
                     // Wait for client's answer
-                    try {
-                        clientMessage = in.readLine();
-                        if (clientMessage == null || clientMessage.trim().equalsIgnoreCase("bye")) {
-                            out.println("Goodbye! You exited the quiz early.");
-                            out.println("Your final score is: " + clientScore + "/50");
-                            System.out.println("Client exited quiz early with score: " + clientScore);
-                            return;
-                        }
+                    clientMessage = in.readLine();
+                    if (clientMessage == null || clientMessage.trim().equalsIgnoreCase("bye")) {
+                        out.println("Goodbye! You exited the quiz early.");
+                        out.println("Your final score is: " + clientScore + "/50");
+                        System.out.println("Client exited quiz early with score: " + clientScore);
+                        return;
+                    }
 
-                        // Validate and process the client's answer
-                        if (clientMessage == null || clientMessage.trim().isEmpty()) {
-                            out.println("Invalid answer. Please provide a valid response.");
-                            continue;
-                        }
+                    System.out.println("Received answer for Question " + questionNumber + ": " + clientMessage);
 
-                        if (clientMessage.trim().equalsIgnoreCase(question.getAnswer())) {
-                            clientScore += 10;
-                            out.println("Correct!");
-                        } else {
-                            out.println("Incorrect!");
-                        }
-                    } catch (Exception e) {
-                        System.out.println("Error during answer validation: " + e.getMessage());
-                        out.println("An error occurred while processing your answer. Skipping this question.");
-                        continue;
+                    // Provide feedback immediately based on case-insensitive comparison
+                    if (clientMessage.trim().equalsIgnoreCase(question.getAnswer())) {
+                        clientScore += 10;
+                        out.println("Correct!");
+                    } else {
+                        out.println("Incorrect!");
                     }
 
                     // Increment question number
                     questionNumber++;
                 }
 
-                // Send final score
+                // Send final score and close connection
                 out.println("Quiz Over! Your final score is: " + clientScore + "/50");
                 System.out.println("Client completed the quiz with score: " + clientScore);
 
@@ -110,6 +101,7 @@ public class QuizServer {
         }
     }
 
+    // Class defining a question
     private static class Question {
         private final String questionText;
         private final String answer;

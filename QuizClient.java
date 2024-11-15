@@ -1,96 +1,182 @@
+import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.net.*;
 
 public class QuizClient {
 
     public static void main(String[] args) {
-        BufferedReader in = null;         // Reads messages from the server
-        BufferedReader userIn = null;     // Reads user input from the console
-        BufferedWriter out = null;        // Sends messages to the server
-        Socket socket = null;
+        SwingUtilities.invokeLater(() -> new QuizClientChatUI());
+    }
+}
 
-        String serverIP = "localhost";   // Default server IP
-        int serverPort = 1234;           // Default server port
+class QuizClientChatUI extends JFrame {
+    private JPanel chatPanel;     // Panel to hold chat messages
+    private JTextField textField; // To input user responses
+    private JButton sendButton;   // To send responses to the server
+    private BufferedReader in;
+    private BufferedWriter out;
+    private Socket socket;
 
-        // Load server connection details from configuration file
+    public QuizClientChatUI() {
+        // Set up the GUI
+        setTitle("Quiz Client - Chat Style");
+        setSize(600, 500);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        chatPanel = new JPanel();
+        chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
+        JScrollPane scrollPane = new JScrollPane(chatPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
+        textField = new JTextField();
+        sendButton = new JButton("Send");
+
+        JPanel inputPanel = new JPanel(new BorderLayout());
+        inputPanel.add(textField, BorderLayout.CENTER);
+        inputPanel.add(sendButton, BorderLayout.EAST);
+
+        add(scrollPane, BorderLayout.CENTER);
+        add(inputPanel, BorderLayout.SOUTH);
+
+        sendButton.addActionListener(e -> sendMessage());
+        textField.addActionListener(e -> sendMessage());
+
+        // Connect to the server
+        connectToServer();
+
+        // Make the GUI visible
+        setVisible(true);
+    }
+
+    private void connectToServer() {
+        String serverIP = "localhost"; // Default IP
+        int serverPort = 1234;         // Default Port
+
+        // Read configuration file
         File configFile = new File("server_info.dat");
         if (configFile.exists()) {
             try (BufferedReader configReader = new BufferedReader(new FileReader(configFile))) {
                 String line;
                 while ((line = configReader.readLine()) != null) {
                     if (line.startsWith("IP=")) {
-                        serverIP = line.substring(3).trim(); // Extract IP
+                        serverIP = line.substring(3).trim();
                     } else if (line.startsWith("PORT=")) {
-                        serverPort = Integer.parseInt(line.substring(5).trim()); // Extract Port
+                        serverPort = Integer.parseInt(line.substring(5).trim());
                     }
                 }
             } catch (IOException | NumberFormatException e) {
-                System.out.println("Error reading configuration file. Using default settings.");
+                addMessage("Error reading configuration file. Using default settings.", false);
             }
         } else {
-            System.out.println("Configuration file not found. Using default settings.");
+            addMessage("Configuration file not found. Using default settings.", false);
         }
 
-        System.out.println("Connecting to server at " + serverIP + ":" + serverPort);
+        addMessage("Connecting to server at " + serverIP + ":" + serverPort, false);
 
+        // Connect to the server
         try {
-            // Connect to the server using the loaded or default IP and port
             socket = new Socket(serverIP, serverPort);
-            System.out.println("Connected to the server.");
+            addMessage("Connected to the server.", false);
 
-            // Initialize input and output streams
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            userIn = new BufferedReader(new InputStreamReader(System.in));
             out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
-            // Display initial messages from the server
-            String serverMessage;
-            while ((serverMessage = in.readLine()) != null) {
-                System.out.println("Server> " + serverMessage);
+            // Start a new thread to listen for server messages
+            new Thread(this::receiveMessages).start();
 
-                // Stop reading initial messages if they include the quiz instructions
-                if (serverMessage.contains("Type 'start' to begin the quiz or 'bye' to exit.")) {
-                    break;
-                }
+        } catch (IOException e) {
+            addMessage("Error connecting to server: " + e.getMessage(), false);
+        }
+    }
+
+    private void sendMessage() {
+        String message = textField.getText().trim();
+        if (message.isEmpty()) {
+            return; // Ignore empty messages
+        }
+
+        addMessage("You: " + message, true); // Show the user's input on the right
+
+        try {
+            out.write(message + "\n");
+            out.flush();
+
+            // If the user types "bye", disable further input
+            if (message.equalsIgnoreCase("bye")) {
+                addMessage("You exited the quiz. Waiting for server's final message...", true);
+                textField.setEnabled(false); // Disable further input
+                sendButton.setEnabled(false);
             }
 
-            String userMessage;
-            while (true) {
-                // Prompt user for input
-                System.out.print("You> ");
-                userMessage = userIn.readLine();
+        } catch (IOException e) {
+            addMessage("Error sending message: " + e.getMessage(), false);
+        }
 
-                // Send the user message to the server
-                out.write(userMessage.trim() + "\n");
-                out.flush(); // Ensure the message is sent immediately
+        textField.setText("");
+    }
 
-                // If the user types "bye", break the loop
-                if (userMessage.trim().equalsIgnoreCase("bye")) {
+    private void receiveMessages() {
+        try {
+            String serverMessage;
+            while ((serverMessage = in.readLine()) != null) {
+                addMessage("Server: " + serverMessage, false); // Server messages appear on the left
+
+                // If the server sends "Quiz Over" or "Goodbye", allow the user to close the GUI
+                if (serverMessage.contains("Quiz Over") || serverMessage.contains("Goodbye")) {
+                    addMessage("Server has ended the connection. You can close the window now.", false);
+                    textField.setEnabled(false); // Disable input
+                    sendButton.setEnabled(false); // Disable button
                     break;
-                }
-
-                // Receive and print the server's response
-                while ((serverMessage = in.readLine()) != null) {
-                    System.out.println("Server> " + serverMessage);
-
-                    // If server sends a new question or ends the quiz, break to allow input
-                    if (serverMessage.startsWith("Question") || serverMessage.contains("Quiz Over")) {
-                        break;
-                    }
                 }
             }
         } catch (IOException e) {
-            System.out.println("Error: " + e.getMessage());
+            addMessage("Connection closed by the server.", false);
         } finally {
-            // Close the socket and release resources
             try {
-                if (socket != null) {
+                if (socket != null && !socket.isClosed()) {
                     socket.close();
                 }
-                System.out.println("Disconnected from the server.");
             } catch (IOException e) {
-                System.out.println("Error closing socket: " + e.getMessage());
+                addMessage("Error closing connection: " + e.getMessage(), false);
             }
         }
+    }
+
+    private void addMessage(String message, boolean isClient) {
+        SwingUtilities.invokeLater(() -> {
+            JPanel messagePanel = new JPanel();
+
+            // Check if the message is a system message
+            if (!isClient && message.startsWith("System>")) {
+                // Center-align for system messages
+                messagePanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+
+                JLabel messageLabel = new JLabel(message.replace("System>", "").trim());
+                messageLabel.setOpaque(true);
+                messageLabel.setBackground(Color.WHITE);
+                messageLabel.setForeground(Color.BLACK); // Black text for system messages
+                messageLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+                messagePanel.add(messageLabel);
+            } else {
+                // Align left for server messages or right for client messages
+                messagePanel.setLayout(new FlowLayout(isClient ? FlowLayout.RIGHT : FlowLayout.LEFT));
+
+                JLabel messageLabel = new JLabel(message);
+                messageLabel.setOpaque(true);
+                messageLabel.setBackground(isClient ? Color.CYAN : Color.LIGHT_GRAY);
+                messageLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+                messagePanel.add(messageLabel);
+            }
+
+            // Add the message panel to the chat panel
+            chatPanel.add(messagePanel);
+            chatPanel.revalidate();
+            chatPanel.repaint();
+
+            // Scroll to the bottom automatically
+            chatPanel.scrollRectToVisible(new Rectangle(0, chatPanel.getHeight(), 1, 1));
+        });
     }
 }
