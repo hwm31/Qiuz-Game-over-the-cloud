@@ -67,18 +67,18 @@ class QuizClientChatUI extends JFrame {
                     }
                 }
             } catch (IOException | NumberFormatException e) {
-                addMessage("Error reading configuration file. Using default settings.", false);
+                addSystemMessage("Error reading configuration file. Using default settings.");
             }
         } else {
-            addMessage("Configuration file not found. Using default settings.", false);
+            addSystemMessage("Configuration file not found. Using default settings.");
         }
 
-        addMessage("Connecting to server at " + serverIP + ":" + serverPort, false);
+        addSystemMessage("Connecting to server at " + serverIP + ":" + serverPort);
 
         // Connect to the server
         try {
             socket = new Socket(serverIP, serverPort);
-            addMessage("Connected to the server.", false);
+            addSystemMessage("Connected to the server.");
 
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -87,7 +87,7 @@ class QuizClientChatUI extends JFrame {
             new Thread(this::receiveMessages).start();
 
         } catch (IOException e) {
-            addMessage("Error connecting to server: " + e.getMessage(), false);
+            addSystemMessage("Error connecting to server: " + e.getMessage());
         }
     }
 
@@ -97,7 +97,7 @@ class QuizClientChatUI extends JFrame {
             return; // Ignore empty messages
         }
 
-        addMessage("You: " + message, true); // Show the user's input on the right
+        addChatMessage("You: " + message, true); // Show the user's input on the right
 
         try {
             out.write(message + "\n");
@@ -105,13 +105,13 @@ class QuizClientChatUI extends JFrame {
 
             // If the user types "bye", disable further input
             if (message.equalsIgnoreCase("bye")) {
-                addMessage("You exited the quiz. Waiting for server's final message...", true);
+                addSystemMessage("You exited the quiz. Waiting for server's final message...");
                 textField.setEnabled(false); // Disable further input
                 sendButton.setEnabled(false);
             }
 
         } catch (IOException e) {
-            addMessage("Error sending message: " + e.getMessage(), false);
+            addSystemMessage("Error sending message: " + e.getMessage());
         }
 
         textField.setText("");
@@ -121,56 +121,67 @@ class QuizClientChatUI extends JFrame {
         try {
             String serverMessage;
             while ((serverMessage = in.readLine()) != null) {
-                addMessage("Server: " + serverMessage, false); // Server messages appear on the left
-
-                // If the server sends "Quiz Over" or "Goodbye", allow the user to close the GUI
-                if (serverMessage.contains("Quiz Over") || serverMessage.contains("Goodbye")) {
-                    addMessage("Server has ended the connection. You can close the window now.", false);
-                    textField.setEnabled(false); // Disable input
-                    sendButton.setEnabled(false); // Disable button
+                // Handle server messages
+                if (serverMessage.contains("Your final score is:")) {
+                    addSystemMessage(serverMessage); // Display the final score as a system message
+                    textField.setEnabled(false);
+                    sendButton.setEnabled(false);
                     break;
+                } else if (serverMessage.contains("Quiz Over") || serverMessage.contains("Goodbye")) {
+                    addSystemMessage(serverMessage); // Quiz completion message
+                    textField.setEnabled(false);
+                    sendButton.setEnabled(false);
+                    break;
+                } else {
+                    addChatMessage("Server: " + serverMessage, false); // Regular server messages
                 }
             }
         } catch (IOException e) {
-            addMessage("Connection closed by the server.", false);
+            addSystemMessage("Connection closed by the server.");
         } finally {
             try {
                 if (socket != null && !socket.isClosed()) {
                     socket.close();
                 }
             } catch (IOException e) {
-                addMessage("Error closing connection: " + e.getMessage(), false);
+                addSystemMessage("Error closing connection: " + e.getMessage());
             }
         }
     }
 
-    private void addMessage(String message, boolean isClient) {
+    private void addChatMessage(String message, boolean isClient) {
         SwingUtilities.invokeLater(() -> {
             JPanel messagePanel = new JPanel();
+            messagePanel.setLayout(new FlowLayout(isClient ? FlowLayout.RIGHT : FlowLayout.LEFT));
 
-            // Check if the message is a system message
-            if (!isClient && message.startsWith("System>")) {
-                // Center-align for system messages
-                messagePanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+            JLabel messageLabel = new JLabel(message);
+            messageLabel.setOpaque(true);
+            messageLabel.setBackground(isClient ? Color.CYAN : Color.LIGHT_GRAY);
+            messageLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+            messagePanel.add(messageLabel);
 
-                JLabel messageLabel = new JLabel(message.replace("System>", "").trim());
-                messageLabel.setOpaque(true);
-                messageLabel.setBackground(Color.WHITE);
-                messageLabel.setForeground(Color.BLACK); // Black text for system messages
-                messageLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-                messagePanel.add(messageLabel);
-            } else {
-                // Align left for server messages or right for client messages
-                messagePanel.setLayout(new FlowLayout(isClient ? FlowLayout.RIGHT : FlowLayout.LEFT));
+            chatPanel.add(messagePanel);
+            chatPanel.revalidate();
+            chatPanel.repaint();
 
-                JLabel messageLabel = new JLabel(message);
-                messageLabel.setOpaque(true);
-                messageLabel.setBackground(isClient ? Color.CYAN : Color.LIGHT_GRAY);
-                messageLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-                messagePanel.add(messageLabel);
-            }
+            // Scroll to the bottom automatically
+            chatPanel.scrollRectToVisible(new Rectangle(0, chatPanel.getHeight(), 1, 1));
+        });
+    }
 
-            // Add the message panel to the chat panel
+    private void addSystemMessage(String message) {
+        SwingUtilities.invokeLater(() -> {
+            JPanel messagePanel = new JPanel();
+            messagePanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+
+            JLabel messageLabel = new JLabel(message);
+            messageLabel.setOpaque(true);
+            messageLabel.setBackground(Color.WHITE);
+            messageLabel.setForeground(Color.BLACK);
+            messageLabel.setFont(messageLabel.getFont().deriveFont(Font.BOLD)); // Bold text for system messages
+            messageLabel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+            messagePanel.add(messageLabel);
+
             chatPanel.add(messagePanel);
             chatPanel.revalidate();
             chatPanel.repaint();
