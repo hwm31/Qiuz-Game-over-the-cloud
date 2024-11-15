@@ -42,6 +42,13 @@ public class QuizClient {
 
                 // If the user types "bye", break the loop
                 if (userMessage.trim().equalsIgnoreCase("bye")) {
+                    // Wait for the final score from the server before exiting
+                    while ((serverMessage = in.readLine()) != null) {
+                        System.out.println("Server> " + serverMessage);
+                        if (serverMessage.contains("Your final score is:")) {
+                            break; // Exit after displaying the final score
+                        }
+                    }
                     break;
                 }
 
@@ -53,6 +60,22 @@ public class QuizClient {
                     if (serverMessage.startsWith("Question") || serverMessage.contains("Quiz Over")) {
                         break;
                     }
+
+                    // If final score is sent, break and display it
+                    if (serverMessage.contains("Your final score is:")) {
+                        break;
+                    }
+                }
+
+                // If the quiz is over, display the final score and disconnect
+                if (serverMessage != null && serverMessage.contains("Quiz Over")) {
+                    while ((serverMessage = in.readLine()) != null) {
+                        System.out.println("Server> " + serverMessage);
+                        if (serverMessage.contains("Your final score is:")) {
+                            break;
+                        }
+                    }
+                    break;
                 }
             }
         } catch (IOException e) {

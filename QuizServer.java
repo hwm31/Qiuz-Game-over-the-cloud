@@ -17,9 +17,11 @@ public class QuizServer {
     private static class QuizHandler implements Runnable {
         private Socket socket;
         private static final List<Question> questions = Arrays.asList(
-                new Question("What is the capital of France?", "Paris"),
-                new Question("What is 2 + 2?", "4"),
-                new Question("What is the largest ocean?", "Pacific")
+                new Question("What is the process of moving packets from one network to another called?", "Forwarding"),
+                new Question("Which protocol is used to send an email?", "SMTP"),
+                new Question("What is the default port number for HTTP?", "80"),
+                new Question("Which device is used to forward packets between different networks?", "Router"),
+                new Question("What protocol is primarily used for secure communication over the internet?", "HTTPS")
         );
 
         QuizHandler(Socket socket) {
@@ -64,7 +66,7 @@ public class QuizServer {
                     if (clientMessage == null || clientMessage.trim().equalsIgnoreCase("bye")) {
                         out.println("Goodbye! You exited the quiz early.");
                         out.println("Your final score is: " + clientScore + "/50");
-                        System.out.println("Client exited quiz early with score: " + clientScore);
+                        System.out.println("Client exited quiz early with score: " + clientScore  + "/50");
                         return; // End connection if client types 'bye' or disconnects
                     }
 
@@ -84,6 +86,7 @@ public class QuizServer {
 
                 // Send final score
                 out.println("Quiz Over! Your final score is: " + clientScore + "/50");
+                System.out.println("Client completed the quiz with score: " + clientScore + "/50");
 
             } catch (IOException e) {
                 System.out.println("Error: " + socket);
